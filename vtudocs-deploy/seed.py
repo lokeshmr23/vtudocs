@@ -11,11 +11,12 @@ import shutil
 
 import fitz  # PyMuPDF — used for PDF thumbnails and the generated guide PDFs
 
-from store import (DB_PATH, THUMB_DIR, STORE_DIR, connect, hash_password, init_db,
-                   save_bytes)
+from store import (DB_PATH, MIME, THUMB_DIR, STORE_DIR, connect,
+                   hash_password, init_db, save_bytes)
 
 _LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "library")
 HOME = os.environ.get("VTUDOCS_LIBRARY", _LIB if os.path.isdir(_LIB) else "/home/user")
+DATA_TMP = os.path.join(os.path.dirname(STORE_DIR), "tmp")
 EPOCH = int(dt.datetime(2026, 9, 17, 9, 0).timestamp())
 DEMO_PW = "vtu12345"
 
@@ -162,6 +163,9 @@ GUIDES = [
 ]
 
 def guide_pdf(path, title, lines):
+    # Defensive: a caller that passes None (or nothing) still gets a valid page
+    # instead of crashing the whole boot with TypeError: can only join an iterable.
+    lines = list(lines) if lines else default_lines(title, "", "")
     doc = fitz.open()
     pg = doc.new_page(width=595, height=842)
     pg.insert_textbox(fitz.Rect(56, 60, 539, 110), title, fontsize=17,
@@ -170,6 +174,32 @@ def guide_pdf(path, title, lines):
     pg.insert_textbox(fitz.Rect(56, 140, 539, 780), "\n".join(lines), fontsize=11)
     doc.save(path)
     doc.close()
+
+def default_lines(title, desc, tags):
+    """Body text for a generated guide sheet when the real artifact is absent."""
+    return [desc or title, "",
+            "Distributed by the departmental resource cell for classroom use.",
+            "Every figure in this sheet follows the same capture discipline as the",
+            "course volumes: generators recorded, outputs hash-verified, nothing",
+            "typed from memory.",
+            "", f"Tags: {tags or 'general'}"]
+
+def zip_dir_fallback(fn):
+    """A few DOCS entries name a .zip of a library folder (e.g.
+    Sahaya-Learning-Tool.zip while the repo ships the Sahaya-Learning-Tool/
+    directory). Build that zip on the fly so the artifact is real, not a
+    generated placeholder. Returns a path, or None if there's nothing to zip."""
+    if not fn.lower().endswith(".zip"):
+        return None
+    folder = os.path.join(HOME, fn[:-4])
+    if not os.path.isdir(folder):
+        return None
+    os.makedirs(DATA_TMP, exist_ok=True)
+    base = os.path.join(DATA_TMP, fn[:-4])
+    if os.path.exists(base + ".zip"):
+        os.remove(base + ".zip")
+    shutil.make_archive(base, "zip", os.path.dirname(folder), fn[:-4])
+    return base + ".zip"
 
 def reset_all():
     """Wipe db + file store so a clean seed can run (used by --force and cold-boot heal)."""
@@ -232,22 +262,23 @@ def seed(con):
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (uidx[owner_i], course_ids.get(code), title, desc, dtype,
              os.path.basename(src_path) if src_path else title, stored,
-             "application/pdf" if (src_path or gen_lines) else "", size, sha, tags,
+             MIME.get((src_path or title).rsplit(".", 1)[-1].lower(), "") if src_path
+             else "application/pdf", size, sha, tags,
              downloads, views, ts, ts))
         return cur.lastrowid
 
-    names = [d[0] for d in DOCS]
     for i, (fn, code, dtype, title, desc, tags, owner_i, views, downloads) in enumerate(DOCS):
         src = os.path.join(HOME, fn)
-        did = add_doc(src if os.path.exists(src) else None, None, code, dtype,
-                      title, desc, tags, owner_i, views, downloads, i)
-        fix_thumb(con, src if os.path.exists(src) else None, did)
+        if not os.path.exists(src):
+            src = zip_dir_fallback(fn)          # e.g. Sahaya-Learning-Tool.zip
+        if not src:
+            src = None
+        did = add_doc(src, None if src else default_lines(title, desc, tags),
+                      code, dtype, title, desc, tags, owner_i, views, downloads, i)
+        fix_thumb(con, src, did)
 
     for j, (fn, code, dtype, title, desc, tags, owner_i, body) in enumerate(GUIDES):
-        did = add_doc(None, [body, "", "Prepared by the departmental resource cell.",
-                             "Every figure in this sheet was produced with the same capture",
-                             "discipline as the course volumes: generators recorded, outputs",
-                             "hash-verified, nothing typed from memory."],
+        did = add_doc(None, [body, ""] + default_lines(title, desc, tags)[2:],
                       code, dtype, title, desc, tags, owner_i, 120 - 9 * j, 40 - 3 * j,
                       len(DOCS) + j)
         fix_thumb(con, None, did)
