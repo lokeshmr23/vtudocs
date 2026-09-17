@@ -1,0 +1,23 @@
+# Render blueprint — https://render.com/docs/blueprint-spec
+# Free tier: spins down after ~15 min idle; disk is EPHEMERAL, so the app
+# self-heals on every cold boot (VTUDOCS_EPHEMERAL) by re-seeding its demo
+# library from ./library. Uploads made between restarts do not survive —
+# this is a demo/portfolio deployment, not a production data store.
+services:
+  - type: web
+    name: vtudocs
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: VTUDOCS_EPHEMERAL
+        value: "1"        # re-seed automatically when data/ got wiped by a restart
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # Optional: set a fixed value so login sessions survive cold restarts
+      # (otherwise a fresh signing key is generated per boot and users re-login).
+      # - key: VTUDOCS_SECRET
+      #   generateValue: true

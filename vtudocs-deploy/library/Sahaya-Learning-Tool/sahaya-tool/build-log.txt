@@ -1,0 +1,10 @@
+build: cp09_build_tool.py
+content pack fingerprint: 0243af53e44d5834
+pages written: 6
+external references: 0
+  index.html        1957 B  sha256:d6d15bb29604cb57
+  m-letter.html    15575 B  sha256:7e9b6d84af9c5852
+  m-number.html     4361 B  sha256:5ef6e39598866df2
+  m-picture.html    5663 B  sha256:192500c850c8ae2e
+  sahaya.css        1655 B  sha256:e41014c7a77dd5b5
+  sahaya.js         1071 B  sha256:97d469f6557b8012

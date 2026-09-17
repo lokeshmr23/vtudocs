@@ -1,0 +1,878 @@
+{
+ "fingerprint": "0243af53e44d5834",
+ "items": [
+  {
+   "answer": "a",
+   "en": "a",
+   "id": "l001",
+   "kn": "ಅ",
+   "level": "entry",
+   "options": [
+    "a",
+    "aa",
+    "kha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "aa",
+   "en": "aa",
+   "id": "l002",
+   "kn": "ಆ",
+   "level": "entry",
+   "options": [
+    "aa",
+    "ae",
+    "la"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "i",
+   "en": "i",
+   "id": "l003",
+   "kn": "ಇ",
+   "level": "entry",
+   "options": [
+    "i",
+    "ja",
+    "tha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ee",
+   "en": "ee",
+   "id": "l004",
+   "kn": "ಈ",
+   "level": "entry",
+   "options": [
+    "ee",
+    "ga",
+    "sha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "u",
+   "en": "u",
+   "id": "l005",
+   "kn": "ಉ",
+   "level": "entry",
+   "options": [
+    "ja",
+    "u",
+    "va"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ru",
+   "en": "ru",
+   "id": "l006",
+   "kn": "ಋ",
+   "level": "entry",
+   "options": [
+    "dha",
+    "ru",
+    "sa"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "e",
+   "en": "e",
+   "id": "l007",
+   "kn": "ಎ",
+   "level": "entry",
+   "options": [
+    "e",
+    "ee",
+    "sa"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ae",
+   "en": "ae",
+   "id": "l008",
+   "kn": "ಏ",
+   "level": "entry",
+   "options": [
+    "ae",
+    "ai",
+    "la2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ai",
+   "en": "ai",
+   "id": "l009",
+   "kn": "ಐ",
+   "level": "entry",
+   "options": [
+    "ai",
+    "au",
+    "ma"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "o",
+   "en": "o",
+   "id": "l010",
+   "kn": "ಒ",
+   "level": "entry",
+   "options": [
+    "bha",
+    "o",
+    "oo"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "oo",
+   "en": "oo",
+   "id": "l011",
+   "kn": "ಓ",
+   "level": "entry",
+   "options": [
+    "cha",
+    "oo",
+    "pa"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "au",
+   "en": "au",
+   "id": "l012",
+   "kn": "ಔ",
+   "level": "entry",
+   "options": [
+    "au",
+    "ba",
+    "na"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ka",
+   "en": "ka",
+   "id": "l013",
+   "kn": "ಕ",
+   "level": "entry",
+   "options": [
+    "ka",
+    "kha",
+    "va"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "kha",
+   "en": "kha",
+   "id": "l014",
+   "kn": "ಖ",
+   "level": "entry",
+   "options": [
+    "kha",
+    "la",
+    "ya"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ga",
+   "en": "ga",
+   "id": "l015",
+   "kn": "ಗ",
+   "level": "entry",
+   "options": [
+    "ga",
+    "gha",
+    "sha2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "gha",
+   "en": "gha",
+   "id": "l016",
+   "kn": "ಘ",
+   "level": "practice",
+   "options": [
+    "gha",
+    "ha",
+    "ta"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "nga",
+   "en": "nga",
+   "id": "l017",
+   "kn": "ಙ",
+   "level": "practice",
+   "options": [
+    "ba",
+    "nga",
+    "o"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "cha",
+   "en": "cha",
+   "id": "l018",
+   "kn": "ಚ",
+   "level": "practice",
+   "options": [
+    "cha",
+    "chha",
+    "o"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "chha",
+   "en": "chha",
+   "id": "l019",
+   "kn": "ಛ",
+   "level": "practice",
+   "options": [
+    "chha",
+    "da",
+    "oo"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ja",
+   "en": "ja",
+   "id": "l020",
+   "kn": "ಜ",
+   "level": "practice",
+   "options": [
+    "ja",
+    "jha",
+    "tha2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "jha",
+   "en": "jha",
+   "id": "l021",
+   "kn": "ಝ",
+   "level": "practice",
+   "options": [
+    "jha",
+    "ka",
+    "u"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ta",
+   "en": "ta",
+   "id": "l022",
+   "kn": "ಟ",
+   "level": "practice",
+   "options": [
+    "ga",
+    "ta",
+    "ta2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "tha",
+   "en": "tha",
+   "id": "l023",
+   "kn": "ಠ",
+   "level": "practice",
+   "options": [
+    "ha",
+    "tha",
+    "tha2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "da",
+   "en": "da",
+   "id": "l024",
+   "kn": "ಡ",
+   "level": "practice",
+   "options": [
+    "da",
+    "da2",
+    "pa"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "dha",
+   "en": "dha",
+   "id": "l025",
+   "kn": "ಢ",
+   "level": "practice",
+   "options": [
+    "dha",
+    "dha2",
+    "ra"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "na2",
+   "en": "na2",
+   "id": "l026",
+   "kn": "ಣ",
+   "level": "practice",
+   "options": [
+    "au",
+    "na2",
+    "nga"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ta2",
+   "en": "ta2",
+   "id": "l027",
+   "kn": "ತ",
+   "level": "practice",
+   "options": [
+    "gha",
+    "ta2",
+    "tha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "tha2",
+   "en": "tha2",
+   "id": "l028",
+   "kn": "ಥ",
+   "level": "practice",
+   "options": [
+    "i",
+    "tha2",
+    "u"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "da2",
+   "en": "da2",
+   "id": "l029",
+   "kn": "ದ",
+   "level": "practice",
+   "options": [
+    "da2",
+    "dha",
+    "pha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "dha2",
+   "en": "dha2",
+   "id": "l030",
+   "kn": "ಧ",
+   "level": "practice",
+   "options": [
+    "dha2",
+    "e",
+    "ru"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "na",
+   "en": "na",
+   "id": "l031",
+   "kn": "ನ",
+   "level": "mastery",
+   "options": [
+    "ai",
+    "na",
+    "na2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "pa",
+   "en": "pa",
+   "id": "l032",
+   "kn": "ಪ",
+   "level": "mastery",
+   "options": [
+    "chha",
+    "pa",
+    "pha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "pha",
+   "en": "pha",
+   "id": "l033",
+   "kn": "ಫ",
+   "level": "mastery",
+   "options": [
+    "da",
+    "pha",
+    "ra"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ba",
+   "en": "ba",
+   "id": "l034",
+   "kn": "ಬ",
+   "level": "mastery",
+   "options": [
+    "ba",
+    "bha",
+    "na2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "bha",
+   "en": "bha",
+   "id": "l035",
+   "kn": "ಭ",
+   "level": "mastery",
+   "options": [
+    "bha",
+    "cha",
+    "nga"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ma",
+   "en": "ma",
+   "id": "l036",
+   "kn": "ಮ",
+   "level": "mastery",
+   "options": [
+    "ae",
+    "ma",
+    "na"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ya",
+   "en": "ya",
+   "id": "l037",
+   "kn": "ಯ",
+   "level": "mastery",
+   "options": [
+    "a",
+    "ka",
+    "ya"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ra",
+   "en": "ra",
+   "id": "l038",
+   "kn": "ರ",
+   "level": "mastery",
+   "options": [
+    "da2",
+    "ra",
+    "ru"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "la",
+   "en": "la",
+   "id": "l039",
+   "kn": "ಲ",
+   "level": "mastery",
+   "options": [
+    "a",
+    "la",
+    "la2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "va",
+   "en": "va",
+   "id": "l040",
+   "kn": "ವ",
+   "level": "mastery",
+   "options": [
+    "jha",
+    "va",
+    "ya"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "sha",
+   "en": "sha",
+   "id": "l041",
+   "kn": "ಶ",
+   "level": "mastery",
+   "options": [
+    "e",
+    "sha",
+    "sha2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "sha2",
+   "en": "sha2",
+   "id": "l042",
+   "kn": "ಷ",
+   "level": "mastery",
+   "options": [
+    "ee",
+    "sha2",
+    "ta"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "sa",
+   "en": "sa",
+   "id": "l043",
+   "kn": "ಸ",
+   "level": "mastery",
+   "options": [
+    "dha2",
+    "sa",
+    "sha"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "ha",
+   "en": "ha",
+   "id": "l044",
+   "kn": "ಹ",
+   "level": "mastery",
+   "options": [
+    "ha",
+    "i",
+    "ta2"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "la2",
+   "en": "la2",
+   "id": "l045",
+   "kn": "ಳ",
+   "level": "mastery",
+   "options": [
+    "aa",
+    "la2",
+    "ma"
+   ],
+   "type": "letter"
+  },
+  {
+   "answer": "0",
+   "en": "0",
+   "id": "n046",
+   "kn": "೦",
+   "level": "entry",
+   "options": [
+    "0",
+    "1",
+    "5"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "1",
+   "en": "1",
+   "id": "n047",
+   "kn": "೧",
+   "level": "entry",
+   "options": [
+    "1",
+    "2",
+    "6"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "2",
+   "en": "2",
+   "id": "n048",
+   "kn": "೨",
+   "level": "entry",
+   "options": [
+    "2",
+    "3",
+    "7"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "3",
+   "en": "3",
+   "id": "n049",
+   "kn": "೩",
+   "level": "entry",
+   "options": [
+    "3",
+    "4",
+    "8"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "4",
+   "en": "4",
+   "id": "n050",
+   "kn": "೪",
+   "level": "practice",
+   "options": [
+    "4",
+    "5",
+    "9"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "5",
+   "en": "5",
+   "id": "n051",
+   "kn": "೫",
+   "level": "practice",
+   "options": [
+    "0",
+    "5",
+    "6"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "6",
+   "en": "6",
+   "id": "n052",
+   "kn": "೬",
+   "level": "practice",
+   "options": [
+    "1",
+    "6",
+    "7"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "7",
+   "en": "7",
+   "id": "n053",
+   "kn": "೭",
+   "level": "mastery",
+   "options": [
+    "2",
+    "7",
+    "8"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "8",
+   "en": "8",
+   "id": "n054",
+   "kn": "೮",
+   "level": "mastery",
+   "options": [
+    "3",
+    "8",
+    "9"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "9",
+   "en": "9",
+   "id": "n055",
+   "kn": "೯",
+   "level": "mastery",
+   "options": [
+    "0",
+    "4",
+    "9"
+   ],
+   "type": "number"
+  },
+  {
+   "answer": "mane (house)",
+   "en": "mane (house)",
+   "id": "p056",
+   "kn": "ಮನೆ",
+   "level": "entry",
+   "options": [
+    "chendu (ball)",
+    "mane (house)",
+    "mara (tree)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "chennige (good)",
+   "en": "chennige (good)",
+   "id": "p057",
+   "kn": "ಚೆನ್ನಿಗೆ",
+   "level": "entry",
+   "options": [
+    "chennige (good)",
+    "haalu (milk)",
+    "mara (tree)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "neeru (water)",
+   "en": "neeru (water)",
+   "id": "p058",
+   "kn": "ನೀರು",
+   "level": "entry",
+   "options": [
+    "hoovu (flower)",
+    "neeru (water)",
+    "pustaka (book)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "haalu (milk)",
+   "en": "haalu (milk)",
+   "id": "p059",
+   "kn": "ಹಾಲು",
+   "level": "entry",
+   "options": [
+    "haalu (milk)",
+    "hoovu (flower)",
+    "naayi (dog)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "pustaka (book)",
+   "en": "pustaka (book)",
+   "id": "p060",
+   "kn": "ಪುಸ್ತಕ",
+   "level": "practice",
+   "options": [
+    "bekku (cat)",
+    "kai (hand)",
+    "pustaka (book)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "chendu (ball)",
+   "en": "chendu (ball)",
+   "id": "p061",
+   "kn": "ಚೆಂಡು",
+   "level": "practice",
+   "options": [
+    "chendu (ball)",
+    "chennige (good)",
+    "mane (house)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "naayi (dog)",
+   "en": "naayi (dog)",
+   "id": "p062",
+   "kn": "ನಾಯಿ",
+   "level": "practice",
+   "options": [
+    "haalu (milk)",
+    "naayi (dog)",
+    "neeru (water)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "bekku (cat)",
+   "en": "bekku (cat)",
+   "id": "p063",
+   "kn": "ಬೆಕ್ಕು",
+   "level": "practice",
+   "options": [
+    "bekku (cat)",
+    "chendu (ball)",
+    "kannu (eye)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "mara (tree)",
+   "en": "mara (tree)",
+   "id": "p064",
+   "kn": "ಮರ",
+   "level": "mastery",
+   "options": [
+    "chennige (good)",
+    "mara (tree)",
+    "naayi (dog)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "hoovu (flower)",
+   "en": "hoovu (flower)",
+   "id": "p065",
+   "kn": "ಹೂವು",
+   "level": "mastery",
+   "options": [
+    "hoovu (flower)",
+    "kai (hand)",
+    "neeru (water)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "kai (hand)",
+   "en": "kai (hand)",
+   "id": "p066",
+   "kn": "ಕೈ",
+   "level": "mastery",
+   "options": [
+    "kai (hand)",
+    "kannu (eye)",
+    "pustaka (book)"
+   ],
+   "type": "picture_word"
+  },
+  {
+   "answer": "kannu (eye)",
+   "en": "kannu (eye)",
+   "id": "p067",
+   "kn": "ಕಣ್ಣು",
+   "level": "mastery",
+   "options": [
+    "bekku (cat)",
+    "kannu (eye)",
+    "mane (house)"
+   ],
+   "type": "picture_word"
+  }
+ ],
+ "n_items": 67,
+ "schema": "cp-pack-1"
+}
