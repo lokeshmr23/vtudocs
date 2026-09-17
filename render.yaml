@@ -1,0 +1,34 @@
+   # Render Blueprint — VTU Docs
+#
+# IMPORTANT: this file lives at the REPO ROOT on purpose. Render looks for
+# render.yaml at the root of the repository by default, so keeping it here means
+# the blueprint can never lose track of its own path.
+#
+# The app itself lives in the vtudocs-deploy/ subfolder, which is what the
+# `rootDir` line below handles. Without rootDir, Render runs the build command
+# from the repo root, finds no requirements.txt there, and the build fails.
+
+services:
+  - type: web
+    name: vtudocs
+    runtime: python
+    plan: free
+    rootDir: vtudocs-deploy          # <-- build and run the app from this subfolder
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      # Free-tier disks are wiped on every restart. This flag makes the app
+      # notice the missing files on boot and re-seed its demo library instead
+      # of serving 410s. User uploads still do not survive a restart.
+      - key: VTUDOCS_EPHEMERAL
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # Optional: set this and login sessions survive cold restarts.
+      # - key: VTUDOCS_SECRET
+      #   generateValue: true
+
+    # `region` is deliberately omitted: region is fixed once a service exists,
+    # and the service already running is in Oregon. Setting it here could force
+    # the blueprint to try to relocate the service, which Render will refuse.
