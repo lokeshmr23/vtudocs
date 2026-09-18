@@ -1,43 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""VTU Docs — document-sharing platform for VTU course material.
-FastAPI + SQLite, token auth (localStorage), CRUD for documents, courses, favorites,
-uploads, downloads, stats. Serves the SPA from ./static."""
+"""VTU Docs — a one-page, public manual library.
+
+Written by Dr. Lokesh M R, Professor, Department of Information Science and
+Engineering, A J Institute of Engineering and Technology, Mangaluru.
+
+Design rules for this server:
+  * There is no login wall. Every subject, manual, preview and download is
+    public — students should never have to create an account to read a book.
+  * No passwords are stored, checked or transmitted. The only optional identity
+    provider is Google Sign-In (`/auth/google`), used purely to greet a reader
+    by name; nothing on the site is gated behind it.
+  * The library is read-only from the browser: no upload / edit / delete routes.
+
+Google Sign-In stays dormant until GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are
+set in the environment (see GOOGLE-SIGNIN.md); until then the button hides itself.
+"""
 import base64 as b64
 import json
 import os
-import re
-import sqlite3
+import secrets
+import urllib.error
+import urllib.parse
+import urllib.request
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 import store
-from store import (ALLOWED_EXT, DB_PATH, MAX_UPLOAD, MIME, THUMB_DIR, connect,
-                   file_path, hash_password, init_db, make_token, now, read_token,
-                   row_doc, safe_title, save_bytes, verify_password)
+from seed import CREATOR
+from store import (STATIC_DIR, connect, file_path, init_db, make_token, now,
+                   read_token, row_doc)
 
-app = FastAPI(title="VTU Docs API", version="1.0.0")
+app = FastAPI(title="VTU Docs", version="2.0.0")
+
+SUBJECTS_SQL = """
+SELECT s.id, s.key, s.title, s.eyebrow, s.cover, s.order_n,
+       (SELECT COUNT(*) FROM courses c WHERE c.subject_id = s.id) AS courses_n
+FROM subjects s ORDER BY s.order_n, s.id
+"""
 
 def db():
     return connect()
-
-def user_of(req: Request, required=True):
-    hdr = req.headers.get("authorization", "")
-    tok = hdr[7:] if hdr.startswith("Bearer ") else (req.query_params.get("t") or "")
-    data = read_token(tok) if tok else None
-    if not data:
-        if required:
-            raise HTTPException(401, "Sign in to continue")
-        return None
-    u = db().execute("SELECT id,name,email,role,dept,semester,avatar FROM users WHERE id=?",
-                     (data["uid"],)).fetchone()
-    if not u:
-        if required:
-            raise HTTPException(401, "Session invalid")
-        return None
-    return dict(u)
 
 @app.on_event("startup")
 def _boot():
@@ -45,339 +50,247 @@ def _boot():
     import seed
     seed.seed_if_empty()   # first boot: full seed · ephemeral hosts: heals wiped data/
 
-def q_all(req):
-    return {k: v for k, v in req.query_params.items()}
-
-# ---------------------------------------------------------------- auth
-@app.post("/api/register")
-async def register(req: Request):
-    b = await req.json()
-    name = safe_title(b.get("name", ""))
-    email = str(b.get("email", "")).strip().lower()
-    pw = str(b.get("password", ""))
-    role = b.get("role", "student")
-    if len(name) < 2:
-        raise HTTPException(422, "Name must be at least 2 characters")
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        raise HTTPException(422, "Enter a valid email address")
-    if len(pw) < 8:
-        raise HTTPException(422, "Password must be at least 8 characters")
-    if role not in ("student", "teacher"):
-        role = "student"
+# ---------------------------------------------------------------- library
+@app.get("/api/library")
+def library():
+    """Everything the one page needs, in one round trip."""
     con = db()
-    if con.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
-        raise HTTPException(409, "That email already has an account")
-    cur = con.execute(
-        "INSERT INTO users(name,email,pass,role,dept,semester,avatar,created_at) "
-        "VALUES (?,?,?,?,?,?,?,?)",
-        (name, email, hash_password(pw), role, safe_title(b.get("dept", "")),
-         safe_title(b.get("semester", "")), "#6366f1", now()))
-    con.commit()
-    uid = cur.lastrowid
-    return {"token": make_token(uid), "user": dict(con.execute(
-        "SELECT id,name,email,role,dept,semester,avatar FROM users WHERE id=?",
-        (uid,)).fetchone())}
+    subjects = []
+    for s in con.execute(SUBJECTS_SQL):
+        course_rows = con.execute(
+            "SELECT code, title, semester, dept, blurb FROM courses "
+            "WHERE subject_id=? ORDER BY code", (s["id"],)).fetchall()
+        docs = con.execute(
+            "SELECT d.* FROM documents d JOIN courses c ON c.id = d.course_id "
+            "WHERE c.subject_id=? AND d.deleted_at IS NULL "
+            "ORDER BY (d.type='book') DESC, d.downloads DESC", (s["id"],)).fetchall()
+        manuals = [row_doc(con, d) for d in docs]
+        subjects.append({
+            "id": s["id"], "key": s["key"], "title": s["title"],
+            "eyebrow": s["eyebrow"], "cover": s["cover"],
+            "courses": [dict(c) for c in course_rows],
+            "codes": [c["code"] for c in course_rows],
+            "blurb": (course_rows[0]["blurb"] if course_rows else ""),
+            "semesters": sorted({c["semester"] for c in course_rows if c["semester"]}),
+            "manuals": manuals,
+            "counts": {
+                "books": sum(1 for m in manuals if m["type"] == "book"),
+                "slides": sum(1 for m in manuals if m["type"] == "slides"),
+                "other": sum(1 for m in manuals if m["type"] not in ("book", "slides")),
+            },
+            "downloads": sum(m["downloads"] for m in manuals),
+            "views": sum(m["views"] for m in manuals),
+            "latest": max((m["created_at"] for m in manuals), default=0),
+        })
 
-@app.post("/api/login")
-async def login(req: Request):
-    b = await req.json()
-    email = str(b.get("email", "")).strip().lower()
-    u = db().execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
-    if not u or not verify_password(str(b.get("password", "")), u["pass"]):
-        raise HTTPException(401, "Email or password is incorrect")
-    return {"token": make_token(u["id"]),
-            "user": {k: u[k] for k in ("id", "name", "email", "role", "dept", "semester", "avatar")}}
+    all_docs = con.execute(
+        "SELECT d.* FROM documents d WHERE d.deleted_at IS NULL "
+        "ORDER BY (d.type='book') DESC, d.downloads DESC").fetchall()
+    manuals = [row_doc(con, d) for d in all_docs]
 
-@app.get("/api/session")
-def session(req: Request):
-    u = user_of(req, required=False)
-    return {"user": u}
+    totals = {
+        "subjects": len(subjects),
+        "courses": con.execute("SELECT COUNT(*) n FROM courses").fetchone()["n"],
+        "manuals": len(manuals),
+        "books": sum(1 for m in manuals if m["type"] == "book"),
+        "slides": sum(1 for m in manuals if m["type"] == "slides"),
+        "bytes": sum(m["size"] for m in manuals),
+        "downloads": sum(m["downloads"] for m in manuals),
+        "views": sum(m["views"] for m in manuals),
+    }
+    con.close()
+    return {"creator": CREATOR, "subjects": subjects, "manuals": manuals,
+            "totals": totals,
+            "auth": {"google": google_enabled()}}
 
-@app.get("/api/me/stats")
-def me_stats(req: Request):
-    u = user_of(req)
-    con = db()
-    mine = con.execute("SELECT COUNT(*) c FROM documents WHERE owner_id=? AND deleted_at IS NULL",
-                       (u["id"],)).fetchone()["c"]
-    favs = con.execute("SELECT COUNT(*) c FROM favorites WHERE user_id=?", (u["id"],)).fetchone()["c"]
-    got = con.execute("SELECT COALESCE(SUM(downloads),0) d FROM documents WHERE owner_id=? "
-                      "AND deleted_at IS NULL", (u["id"],)).fetchone()["d"]
-    return {"mine": mine, "favorites": favs, "downloads_on_mine": got}
+@app.get("/api/subjects/{key}")
+def subject(key: str):
+    lib = library()
+    for s in lib["subjects"]:
+        if s["key"] == key:
+            return s
+    raise HTTPException(404, "No such subject")
 
-# ---------------------------------------------------------------- courses
-@app.get("/api/courses")
-def courses(req: Request):
-    rows = db().execute(
-        "SELECT c.*, (SELECT COUNT(*) FROM documents d WHERE d.course_id=c.id "
-        "AND d.deleted_at IS NULL) n FROM courses c ORDER BY c.code").fetchall()
-    return {"items": [dict(r) for r in rows]}
+@app.get("/api/manuals")
+def manuals(q: str = "", subject: str = "", type: str = "", sort: str = "downloads"):
+    lib = library()
+    items = lib["manuals"]
+    if q.strip():
+        needle = q.strip().lower()
+        items = [m for m in items if needle in (m["title"] + " " + m["description"]
+                 + " " + " ".join(m["tags"]) + " "
+                 + ((m["course"] or {}).get("code", ""))).lower()]
+    if subject:
+        items = [m for m in items
+                 if str((m["course"] or {}).get("subject_id") or "") == str(subject)]
+    if type in ("book", "slides", "notes", "archive"):
+        items = [m for m in items if m["type"] == type]
+    keys = {"downloads": lambda m: -m["downloads"], "views": lambda m: -m["views"],
+            "recent": lambda m: -m["created_at"], "title": lambda m: m["title"].lower(),
+            "size": lambda m: -m["size"]}
+    items = sorted(items, key=keys.get(sort, keys["downloads"]))
+    return {"total": len(items), "items": items}
 
-@app.post("/api/courses")
-async def add_course(req: Request):
-    u = user_of(req)
-    b = await req.json()
-    code = safe_title(b.get("code", "")).upper()
-    title = safe_title(b.get("title", ""))
-    if len(code) < 2 or len(title) < 3:
-        raise HTTPException(422, "Course code and title (3+ chars) are required")
-    con = db()
-    if con.execute("SELECT 1 FROM courses WHERE code=?", (code,)).fetchone():
-        raise HTTPException(409, "A course with that code already exists")
-    cur = con.execute("INSERT INTO courses(code,title,dept,semester,created_at) VALUES (?,?,?,?,?)",
-                      (code, title, safe_title(b.get("dept", "")),
-                       safe_title(b.get("semester", "")), now()))
-    con.commit()
-    return {"id": cur.lastrowid, "code": code, "title": title, "n": 0}
-
-@app.delete("/api/courses/{cid}")
-def del_course(cid: int, req: Request):
-    u = user_of(req)
-    if u["role"] != "teacher":
-        raise HTTPException(403, "Only teachers can delete courses")
-    con = db()
-    busy = con.execute("SELECT 1 FROM documents WHERE course_id=? AND deleted_at IS NULL",
-                       (cid,)).fetchone()
-    if busy:
-        raise HTTPException(409, "Move or delete this course's documents first")
-    con.execute("DELETE FROM courses WHERE id=?", (cid,))
-    con.commit()
-    return {"ok": True}
-
-# ---------------------------------------------------------------- documents
-@app.get("/api/documents")
-def list_docs(req: Request):
-    u = user_of(req, required=False)
-    me = u["id"] if u else None
-    q = q_all(req)
-    scope, term = q.get("scope", "all"), f"%{q.get('q','').strip()}%"
-    qcourse, qtype, sort = q.get("course", ""), q.get("type", ""), q.get("sort", "recent")
-    page = max(1, int(q.get("page", 1)))
-    per = 12
-    W = ["d.deleted_at IS NULL"]
-    P = []
-    if scope == "mine" and me:
-        W.append("d.owner_id=?"); P.append(me)
-    if scope == "favorites" and me:
-        W.append("d.id IN (SELECT doc_id FROM favorites WHERE user_id=?)"); P.append(me)
-    if qcourse.isdigit():
-        W.append("d.course_id=?"); P.append(int(qcourse))
-    if qtype in ("book", "slides", "notes", "archive"):
-        W.append("d.type=?"); P.append(qtype)
-    if q.get("q", "").strip():
-        W.append("(d.title LIKE ? OR d.description LIKE ? OR d.tags LIKE ?)")
-        P += [term, term, term]
-    order = {"downloads": "d.downloads DESC", "title": "d.title COLLATE NOCASE ASC",
-             "views": "d.views DESC"}.get(sort, "d.created_at DESC")
-    where = " AND ".join(W)
-    con = db()
-    total = con.execute(f"SELECT COUNT(*) t FROM documents d WHERE {where}", P).fetchone()["t"]
-    rows = con.execute(
-        f"SELECT d.* FROM documents d WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?",
-        P + [per, (page - 1) * per]).fetchall()
-    items = [row_doc(con, r, me) for r in rows]
-    return {"total": total, "page": page, "pages": max(1, -(-total // per)), "items": items}
-
-def parse_upload(b):
-    title = safe_title(b.get("title", ""))
-    if len(title) < 3:
-        raise HTTPException(422, "Title must be at least 3 characters")
-    f = b.get("file") or {}
-    fname = str(f.get("name", "")).strip()
-    ext = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
-    if ext not in ALLOWED_EXT:
-        raise HTTPException(422, "Unsupported file type — allowed: " + ", ".join(sorted(ALLOWED_EXT)))
-    try:
-        raw = b64.b64decode(f.get("data_b64", ""), validate=True)
-    except Exception:
-        raise HTTPException(422, "Corrupted upload payload")
-    if not raw:
-        raise HTTPException(422, "The file appears to be empty")
-    if len(raw) > MAX_UPLOAD:
-        raise HTTPException(413, f"File exceeds the {MAX_UPLOAD // 1048576} MB limit")
-    dtype = b.get("type", "book")
-    if dtype not in ("book", "slides", "notes", "archive"):
-        dtype = {"pptx": "slides", "ppt": "slides", "zip": "archive"}.get(ext, "book")
-    tags = ",".join(t for t in (x.strip().lower() for x in str(b.get("tags", "")).split(","))
-                    if t and len(t) <= 24)[:120]
-    return title, fname, ext, raw, dtype, b.get("description", ""), b.get("course_id"), tags
-
-@app.post("/api/documents")
-async def create_doc(req: Request):
-    u = user_of(req)
-    title, fname, ext, raw, dtype, desc, course_id, tags = parse_upload(await req.json())
-    stored, sha, size = save_bytes(fname, raw)
-    pix = None
-    if ext == "pdf":                      # render a card thumbnail for PDFs
-        try:
-            import fitz
-            d = fitz.open(file_path(stored))
-            pix = d[0].get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
-            d.close()
-        except Exception:
-            pix = None
-    con = db()
-    cur = con.execute(
-        "INSERT INTO documents(owner_id,course_id,title,description,type,filename,"
-        "stored_name,mime,size,sha,tags,downloads,views,created_at,updated_at) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,0,0,?,?)",
-        (u["id"], int(course_id) if str(course_id or "").isdigit() else None, title,
-         safe_title(desc), dtype, fname, stored, MIME.get(ext, "application/octet-stream"),
-         size, sha, tags, now(), now()))
-    did = cur.lastrowid
-    if pix is not None:
-        try:
-            pix.save(os.path.join(THUMB_DIR, f"doc{did}.png"))
-        except Exception:
-            pass
-    con.commit()
-    return row_doc(con, con.execute("SELECT * FROM documents WHERE id=?", (did,)).fetchone(), u["id"])
-
+# ---------------------------------------------------------------- files
 @app.get("/api/documents/{did}")
-def get_doc(did: int, req: Request):
-    u = user_of(req, required=False)
+def get_doc(did: int, count: bool = False):
     con = db()
-    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL", (did,)).fetchone()
+    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL",
+                    (did,)).fetchone()
     if not r:
         raise HTTPException(404, "Document not found")
-    con.execute("UPDATE documents SET views = views + 1 WHERE id=?", (did,))
-    con.commit()
-    d = row_doc(con, r, u["id"] if u else None)
-    d["views"] += 1
-    d["can_edit"] = bool(u and (u["id"] == r["owner_id"] or u["role"] == "teacher"))
+    if count:                       # preview opens are the only view counter here
+        con.execute("UPDATE documents SET views = views + 1 WHERE id=?", (did,))
+        con.commit()
+        r = con.execute("SELECT * FROM documents WHERE id=?", (did,)).fetchone()
+    d = row_doc(con, r)
+    con.close()
     return d
 
-@app.put("/api/documents/{did}")
-async def upd_doc(did: int, req: Request):
-    u = user_of(req)
-    con = db()
-    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL", (did,)).fetchone()
-    if not r:
-        raise HTTPException(404, "Document not found")
-    if r["owner_id"] != u["id"] and u["role"] != "teacher":
-        raise HTTPException(403, "Only the owner (or a teacher) can edit this")
-    b = await req.json()
-    title = safe_title(b.get("title", r["title"]))
-    if len(title) < 3:
-        raise HTTPException(422, "Title must be at least 3 characters")
-    dtype = b.get("type", r["type"])
-    if dtype not in ("book", "slides", "notes", "archive"):
-        dtype = r["type"]
-    tags = ",".join(t for t in (x.strip().lower() for x in str(b.get("tags", "")).split(","))
-                    if t and len(t) <= 24)[:120]
-    con.execute(
-        "UPDATE documents SET title=?, description=?, type=?, course_id=?, tags=?, updated_at=? "
-        "WHERE id=?",
-        (title, safe_title(b.get("description", r["description"])), dtype,
-         int(b["course_id"]) if str(b.get("course_id", "")).isdigit() else None,
-         tags, now(), did))
-    con.commit()
-    return row_doc(con, con.execute("SELECT * FROM documents WHERE id=?", (did,)).fetchone(), u["id"])
-
-@app.delete("/api/documents/{did}")
-def del_doc(did: int, req: Request):
-    u = user_of(req)
-    con = db()
-    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL", (did,)).fetchone()
-    if not r:
-        raise HTTPException(404, "Document not found")
-    if r["owner_id"] != u["id"] and u["role"] != "teacher":
-        raise HTTPException(403, "Only the owner (or a teacher) can delete this")
-    con.execute("UPDATE documents SET deleted_at=? WHERE id=?", (now(), did))
-    con.commit()
-    return {"ok": True, "soft": True}
-
-@app.post("/api/documents/{did}/restore")
-def restore_doc(did: int, req: Request):
-    u = user_of(req)
-    con = db()
-    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NOT NULL", (did,)).fetchone()
-    if not r:
-        raise HTTPException(404, "Nothing to restore")
-    if r["owner_id"] != u["id"] and u["role"] != "teacher":
-        raise HTTPException(403, "Not yours to restore")
-    con.execute("UPDATE documents SET deleted_at=NULL WHERE id=?", (did,))
-    con.commit()
-    return {"ok": True}
-
-@app.post("/api/documents/{did}/favorite")
-def fav_doc(did: int, req: Request):
-    u = user_of(req)
-    con = db()
-    if not con.execute("SELECT 1 FROM documents WHERE id=? AND deleted_at IS NULL",
-                       (did,)).fetchone():
-        raise HTTPException(404, "Document not found")
-    on = con.execute("SELECT 1 FROM favorites WHERE user_id=? AND doc_id=?",
-                     (u["id"], did)).fetchone() is None
-    if on:
-        con.execute("INSERT INTO favorites(user_id,doc_id,created_at) VALUES (?,?,?)",
-                    (u["id"], did, now()))
-    else:
-        con.execute("DELETE FROM favorites WHERE user_id=? AND doc_id=?", (u["id"], did))
-    con.commit()
-    return {"favorited": on}
-
 @app.get("/api/documents/{did}/download")
-def download_doc(did: int, req: Request):
-    user_of(req)
+def download_doc(did: int):
     con = db()
-    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL", (did,)).fetchone()
+    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL",
+                    (did,)).fetchone()
     if not r:
         raise HTTPException(404, "Document not found")
     con.execute("UPDATE documents SET downloads = downloads + 1 WHERE id=?", (did,))
     con.commit()
+    con.close()
     p = file_path(r["stored_name"])
     if not os.path.exists(p):
-        raise HTTPException(410, "Stored file is missing — re-upload it")
-    return FileResponse(p, filename=r["filename"], media_type=r["mime"] or None)
+        raise HTTPException(410, "The stored file is missing — re-seed the library")
+    return FileResponse(p, filename=r["filename"],
+                        media_type=r["mime"] or "application/octet-stream")
 
 @app.get("/api/documents/{did}/preview")
-def preview_doc(did: int, req: Request):
-    user_of(req)
+def preview_doc(did: int):
+    """Inline read-in-the-browser view. PDFs only; other types are downloaded."""
     con = db()
-    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL", (did,)).fetchone()
+    r = con.execute("SELECT * FROM documents WHERE id=? AND deleted_at IS NULL",
+                    (did,)).fetchone()
+    con.close()
     if not r:
         raise HTTPException(404, "Document not found")
     p = file_path(r["stored_name"])
     if r["mime"] != "application/pdf" or not os.path.exists(p):
-        raise HTTPException(415, "Inline preview is available for PDFs only")
+        raise HTTPException(415, "Inline reading is available for the PDF manuals only")
     return FileResponse(p, media_type="application/pdf",
-                        headers={"Content-Disposition": "inline"})
+                        headers={"Content-Disposition": "inline",
+                                 "Cache-Control": "public, max-age=600"})
 
 @app.get("/api/documents/{did}/thumb")
-def thumb_doc(did: int, req: Request):
-    p = os.path.join(THUMB_DIR, f"doc{int(did)}.png")
+def thumb_doc(did: int):
+    p = os.path.join(store.THUMB_DIR, f"doc{int(did)}.png")
     if not os.path.exists(p):
         raise HTTPException(404, "no thumbnail")
     return FileResponse(p, media_type="image/png",
-                        headers={"Cache-Control": "public, max-age=3600"})
+                        headers={"Cache-Control": "public, max-age=86400"})
 
-# ---------------------------------------------------------------- dashboard
-@app.get("/api/stats")
-def stats(req: Request):
-    u = user_of(req, required=False)
-    me = u["id"] if u else None
+# ---------------------------------------------------------------- google sign-in
+COOKIE = "vtu_reader"
+
+def google_enabled():
+    return bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
+
+def _redirect_uri(req: Request):
+    base = os.environ.get("OAUTH_REDIRECT_BASE", "").rstrip("/")
+    return (base or str(req.base_url).rstrip("/")) + "/auth/google/callback"
+
+def _swap_code(code, req):
+    """Exchange the authorization code for tokens (no third-party deps)."""
+    data = urllib.parse.urlencode({
+        "code": code,
+        "client_id": os.environ["GOOGLE_CLIENT_ID"],
+        "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
+        "redirect_uri": _redirect_uri(req),
+        "grant_type": "authorization_code",
+    }).encode()
+    rq = urllib.request.Request("https://oauth2.googleapis.com/token", data=data,
+                                headers={"Content-Type": "application/x-www-form-urlencoded"})
+    with urllib.request.urlopen(rq, timeout=15) as r:
+        return json.loads(r.read())
+
+def _claims(id_token):
+    """Read the (already TLS-verified) ID token payload — signature is Google's."""
+    payload = id_token.split(".")[1]
+    payload += "=" * (-len(payload) % 4)
+    return json.loads(b64.urlsafe_b64decode(payload))
+
+@app.get("/api/auth/config")
+def auth_config():
+    return {"google": google_enabled()}
+
+@app.get("/api/auth/me")
+def auth_me(req: Request):
+    tok = req.cookies.get(COOKIE, "")
+    data = read_token(tok) if tok else None
+    if not data:
+        return {"user": None}
+    row = db().execute("SELECT id,name,email,role,avatar FROM users WHERE id=?",
+                       (data["uid"],)).fetchone()
+    return {"user": dict(row) if row else None}
+
+@app.post("/api/auth/logout")
+def auth_logout():
+    r = JSONResponse({"ok": True})
+    r.delete_cookie(COOKIE)
+    return r
+
+@app.get("/auth/google")
+def auth_google(req: Request):
+    if not google_enabled():
+        return RedirectResponse("/?signin=unconfigured", status_code=302)
+    state = secrets.token_urlsafe(18)
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode({
+        "client_id": os.environ["GOOGLE_CLIENT_ID"],
+        "redirect_uri": _redirect_uri(req),
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "prompt": "select_account",
+    })
+    r = RedirectResponse(url, status_code=302)
+    r.set_cookie("vtu_state", state, max_age=600, httponly=True, samesite="lax")
+    return r
+
+@app.get("/auth/google/callback")
+def auth_callback(req: Request, code: str = "", state: str = "", error: str = ""):
+    if error or not code:
+        return RedirectResponse("/?signin=cancelled", status_code=302)
+    if state != req.cookies.get("vtu_state", ""):
+        return RedirectResponse("/?signin=state", status_code=302)
+    try:
+        tokens = _swap_code(code, req)
+        claims = _claims(tokens["id_token"])
+    except (urllib.error.URLError, KeyError, ValueError):
+        return RedirectResponse("/?signin=failed", status_code=302)
+    email = str(claims.get("email", "")).strip().lower()
+    if not email:
+        return RedirectResponse("/?signin=failed", status_code=302)
+    name = claims.get("name") or email.split("@")[0]
     con = db()
-    tot = con.execute("SELECT COUNT(*) n, COALESCE(SUM(size),0) b, COALESCE(SUM(downloads),0) d,"
-                      " COALESCE(SUM(views),0) v FROM documents WHERE deleted_at IS NULL").fetchone()
-    nc = con.execute("SELECT COUNT(*) n FROM courses").fetchone()["n"]
-    def pack(rows):
-        return [row_doc(con, r, me) for r in rows]
-    recent = pack(con.execute("SELECT d.* FROM documents d WHERE d.deleted_at IS NULL "
-                              "ORDER BY d.created_at DESC LIMIT 6").fetchall())
-    top = pack(con.execute("SELECT d.* FROM documents d WHERE d.deleted_at IS NULL "
-                           "ORDER BY d.downloads DESC LIMIT 5").fetchall())
-    bycourse = [dict(r) for r in con.execute(
-        "SELECT c.code, c.title, COUNT(d.id) n, COALESCE(SUM(d.downloads),0) d "
-        "FROM courses c LEFT JOIN documents d ON d.course_id=c.id AND d.deleted_at IS NULL "
-        "GROUP BY c.id ORDER BY d DESC LIMIT 6").fetchall()]
-    return {"totals": {"documents": tot["n"], "bytes": tot["b"], "downloads": tot["d"],
-                       "views": tot["v"], "courses": nc},
-            "recent": recent, "top": top, "by_course": bycourse,
-            "me": {"name": u["name"].split()[0], "role": u["role"]} if u else None}
+    row = con.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+    if row:
+        uid = row["id"]
+        con.execute("UPDATE users SET name=? WHERE id=?", (name, uid))
+    else:
+        cur = con.execute(
+            "INSERT INTO users(name,email,pass,role,dept,semester,avatar,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (name, email, "", "reader", "", "", "#4285f4", now()))
+        uid = cur.lastrowid
+    con.commit()
+    con.close()
+    r = RedirectResponse("/?signin=ok#reader", status_code=302)
+    r.set_cookie(COOKIE, make_token(uid), max_age=30 * 86400, httponly=True,
+                 samesite="lax", secure=req.url.scheme == "https")
+    r.delete_cookie("vtu_state")
+    return r
 
-# ---------------------------------------------------------------- SPA
+# ---------------------------------------------------------------- one page
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(store.STATIC_DIR, "index.html"))
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
-app.mount("/assets", StaticFiles(directory=store.STATIC_DIR), name="assets")
+app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")

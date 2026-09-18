@@ -1,4 +1,4 @@
-   # Render Blueprint — VTU Docs
+   # Render Blueprint — VTU Docs (one public page, no login)
 #
 # IMPORTANT: this file lives at the REPO ROOT on purpose. Render looks for
 # render.yaml at the root of the repository by default, so keeping it here means
@@ -18,14 +18,25 @@ services:
     startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:
-      # Free-tier disks are wiped on every restart. This flag makes the app
-      # notice the missing files on boot and re-seed its demo library instead
-      # of serving 410s. User uploads still do not survive a restart.
+      # Free-tier disks are wiped on every restart. This flag makes the app notice
+      # the missing files on boot and re-seed its library instead of serving 410s.
+      # The site is read-only, so nothing a visitor does can be lost.
       - key: VTUDOCS_EPHEMERAL
         value: "1"
       - key: PYTHON_VERSION
         value: "3.12"
-      # Optional: set this and login sessions survive cold restarts.
+
+      # ---- Optional: Google sign-in (nothing is gated behind it) --------------
+      # See vtudocs-deploy/GOOGLE-SIGNIN.md for the 15-minute setup. The button
+      # hides itself automatically while these are unset.
+      # - key: GOOGLE_CLIENT_ID
+      #   sync: false                     # prompts in the Render dashboard
+      # - key: GOOGLE_CLIENT_SECRET
+      #   sync: false
+      # - key: OAUTH_REDIRECT_BASE        # only needed for a custom domain
+      #   value: https://vtudocs.example.com
+
+      # ---- Optional: keeps signed-in readers logged in across restarts --------
       # - key: VTUDOCS_SECRET
       #   generateValue: true
 

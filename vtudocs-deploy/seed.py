@@ -1,40 +1,86 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Seed VTU Docs with a living library: every real course artifact in the workspace
-(8 books + 8 slide decks + the Sahaya tool), users with roles, courses, favorites and
-activity numbers. Deterministic: fixed epoch, arithmetic stats, no randomness."""
+(8 books + 8 slide decks + the Sahaya tool + guide sheets), the subject groupings the
+one-page site renders as clickable cover tiles, courses, authors and activity numbers.
+Deterministic: fixed epoch, arithmetic stats, no randomness."""
 import datetime as dt
-import hashlib
 import os
-import re
 import shutil
 
 import fitz  # PyMuPDF — used for PDF thumbnails and the generated guide PDFs
 
 from store import (DB_PATH, MIME, THUMB_DIR, STORE_DIR, connect,
-                   hash_password, init_db, save_bytes)
+                   init_db, save_bytes)
 
 _LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "library")
 HOME = os.environ.get("VTUDOCS_LIBRARY", _LIB if os.path.isdir(_LIB) else "/home/user")
 DATA_TMP = os.path.join(os.path.dirname(STORE_DIR), "tmp")
 EPOCH = int(dt.datetime(2026, 9, 17, 9, 0).timestamp())
-DEMO_PW = "vtu12345"
 
-COURSES = [
- ("1BAIL307A", "Exploratory Data Analysis (Lab)", "AEC · ISE", "Sem 3"),
- ("1BCS302",  "Object-Oriented Programming with Java", "CSE", "Sem 3"),
- ("1BCS303",  "Digital Design & Computer Organization", "ECE", "Sem 3"),
- ("1BCS304",  "Operating Systems", "CSE", "Sem 4"),
- ("1BMATCS301", "Probability & Statistics for CS", "Maths", "Sem 3"),
- ("1BPLC105B/205B", "Python Programming (Lab)", "Common · CSE/ISE", "Sem 1–2"),
- ("1BPOPL107/207", "C-Programming Lab", "Common · CSE/ISE", "Sem 1–2"),
- ("1BCP308",  "Community Project / Societal Project", "AEC/SDC", "Sem 3"),
- ("GEN-RES",  "Departmental Resources & Guides", "ISE · AJIET", "All"),
+CREATOR = {
+    "name": "Dr. Lokesh M R",
+    "designation": "Professor",
+    "department": "Department of Information Science and Engineering",
+    "institute": "A J Institute of Engineering and Technology",
+    "place": "Mangaluru, Karnataka, India",
+    "email": "lokesh@ajiet.edu.in",
+    "note": "Every volume in this library was written, run and captured for the "
+            "2025-scheme VTU batches — programs compiled, outputs recorded, nothing "
+            "typed from memory.",
+}
+
+# Subject tiles — key, title, eyebrow, cover plate, order. One tile per subject;
+# each tile opens the manuals that belong to it.
+SUBJECTS = [
+    ("c-programming", "C Programming Lab",
+     "Laboratory course · Semester I / II", "1BPOPL107-207", 1),
+    ("python", "Python Programming",
+     "Integrated theory & practical · Semester I / II", "1BPLC105B-205B", 2),
+    ("java", "Object Oriented Programming with Java",
+     "Integrated theory & practical · Semester III", "1BCS302", 3),
+    ("ddco", "Digital Design & Computer Organization",
+     "Theory course with Verilog activity · Semester III", "1BCS303", 4),
+    ("os", "Operating Systems",
+     "Theory course with C-programming activity · Semester III", "1BCS304", 5),
+    ("stats", "Probability Distributions & Statistics",
+     "Analytical skills & competency course · Semester III", "1BMATCS301", 6),
+    ("eda", "Exploratory Data Analysis",
+     "Laboratory course (AEC) · Semester III", "1BAIL307A", 7),
+    ("community", "Community Project & Societal Learning",
+     "AEC / SDC · Semester III · project-based learning", "1BCP308", 8),
+    ("resources", "Guides, Sheets & Tools",
+     "Departmental resource cell · All semesters", "GEN-RES", 9),
 ]
 
+# course code, title, dept, semester, subject key, blurb
+COURSES = [
+ ("1BPOPL107/207", "C-Programming Lab", "Common · CSE/ISE", "Sem 1–2", "c-programming",
+  "The volume that set the series standard: 14 experiments in record format — algorithm, flowchart, program, then the captured run."),
+ ("1BPLC105B/205B", "Python Programming (Lab)", "Common · CSE/ISE", "Sem 1–2", "python",
+  "Five modules and a full lab: every program run and captured, outputs embedded verbatim in the book."),
+ ("1BCS302", "Object-Oriented Programming with Java", "CSE", "Sem 3", "java",
+  "Integrated theory and laboratory notes — classes, inheritance, collections, exceptions, with compiled transcripts."),
+ ("1BCS303", "Digital Design & Computer Organization", "ECE", "Sem 3", "ddco",
+  "Logic gates to pipelined datapaths, with the Verilog learning activity worked out end to end."),
+ ("1BCS304", "Operating Systems", "CSE", "Sem 4", "os",
+  "Scheduling, synchronisation, memory and file systems — every activity backed by a C-programming capture."),
+ ("1BMATCS301", "Probability & Statistics for CS", "Maths", "Sem 3", "stats",
+  "Distributions and statistics for computing, with worked derivations and tutorial practice sets."),
+ ("1BAIL307A", "Exploratory Data Analysis (Lab)", "AEC · ISE", "Sem 3", "eda",
+  "All 12 prescribed experiments plus three toolkit chapters; every output captured twice, byte-identical."),
+ ("1BCP308", "Community Project / Societal Project", "AEC/SDC", "Sem 3", "community",
+  "Fifteen week-chapters of the offline learning-tool project — plan, tool, pilot data, DPR and viva ledger."),
+ ("GEN-RES", "Departmental Resources & Guides", "ISE · AJIET", "All", "resources",
+  "Field-visit manuals, rubrics, timetables and practice sets issued by the departmental resource cell."),
+ ("GEN-CS", "Common CS Resources", "Dept office", "All", "resources",
+  "Shared practice sets and sample sheets used across the CSE and ISE wings."),
+]
+
+
 USERS = [
- ("Dr. Lokesh M R", "lokesh@ajiet.edu.in", "teacher", "ISE · AJIET Mangaluru", "", "#0f766e"),
- ("Prof. Divya Kamath", "divya.k@ajiet.edu.in", "teacher", "CSE · AJIET Mangaluru", "", "#7c3aed"),
+ ("Dr. Lokesh M R", "lokesh@ajiet.edu.in", "author", "ISE · AJIET Mangaluru", "", "#0f766e"),
+ ("Prof. Divya Kamath", "divya.k@ajiet.edu.in", "faculty", "CSE · AJIET Mangaluru", "", "#7c3aed"),
  ("Aarathi R", "aarathi.r@vtustudents.edu", "student", "ISE", "Sem 3", "#6366f1"),
  ("Bhargav Shetty", "bhargav.s@vtustudents.edu", "student", "CSE", "Sem 3", "#d97706"),
  ("Chaitra P", "chaitra.p@vtustudents.edu", "student", "ECE", "Sem 3", "#e11d48"),
@@ -230,21 +276,27 @@ def seed_if_empty():
 def seed(con):
     init_db()
     for name, email, role, dept, sem, av in USERS:
+        # `pass` is vestigial: the site has no password login at all, only the
+        # optional Google sign-in, so no secret is stored here.
         con.execute("INSERT INTO users(name,email,pass,role,dept,semester,avatar,created_at)"
                     " VALUES (?,?,?,?,?,?,?,?)",
-                    (name, email, hash_password(DEMO_PW), role, dept, sem, av, EPOCH - 90 * 86400))
+                    (name, email, "", role, dept, sem, av, EPOCH - 90 * 86400))
     uids = {r["email"]: r["id"] for r in con.execute("SELECT id,email FROM users")}
     uidx = list(uids.values())
 
+    subject_ids = {}
+    for key, title, eyebrow, cover, order_n in SUBJECTS:
+        row = con.execute("INSERT INTO subjects(key,title,eyebrow,cover,order_n) VALUES (?,?,?,?,?)",
+                          (key, title, eyebrow, cover, order_n))
+        subject_ids[key] = row.lastrowid
+
     course_ids = {}
-    for i, (code, title, dept, sem) in enumerate(COURSES):
-        row = con.execute("INSERT INTO courses(code,title,dept,semester,created_at) VALUES (?,?,?,?,?)",
-                          (code, title, dept, sem, EPOCH - 80 * 86400))
+    for code, title, dept, sem, skey, blurb in COURSES:
+        row = con.execute(
+            "INSERT INTO courses(code,title,dept,semester,created_at,subject_id,blurb) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (code, title, dept, sem, EPOCH - 80 * 86400, subject_ids.get(skey), blurb))
         course_ids[code] = row.lastrowid
-    # aliases used by the generated guides
-    row = con.execute("INSERT INTO courses(code,title,dept,semester,created_at) VALUES (?,?,?,?,?)",
-                      ("GEN-CS", "Common CS Resources", "Dept office", "All", EPOCH - 80 * 86400))
-    course_ids["GEN-CS"] = row.lastrowid
 
     def add_doc(src_path, gen_lines, code, dtype, title, desc, tags, owner_i, views, downloads, i):
         if src_path:
@@ -283,15 +335,7 @@ def seed(con):
                       len(DOCS) + j)
         fix_thumb(con, None, did)
 
-    # deterministic favorites & cross-links
-    fav_pairs = [(3, 1), (3, 5), (3, 15), (4, 3), (4, 7), (4, 11), (5, 1), (5, 9),
-                 (6, 16), (6, 15), (3, 19), (5, 21), (6, 22), (4, 20), (6, 13)]
-    for ui, di in fav_pairs:
-        try:
-            con.execute("INSERT INTO favorites(user_id,doc_id,created_at) VALUES (?,?,?)",
-                        (uids[USERS[ui - 1][1]], di, EPOCH - 5 * 86400 + di * 3600))
-        except sqlite3.IntegrityError:
-            pass
+    # deterministic cross-references (kept for the analytics strip)
     con.commit()
 
 def fix_thumb(con, src, did):
@@ -312,7 +356,7 @@ def fix_thumb(con, src, did):
             pass
 
 if __name__ == "__main__":
-    import sqlite3, sys
+    import sys
     if "--force" in sys.argv and os.path.exists(DB_PATH):
         os.remove(DB_PATH)
         for f in os.listdir(THUMB_DIR):
