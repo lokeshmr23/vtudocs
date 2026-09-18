@@ -1,8 +1,7 @@
-# Render blueprint — https://render.com/docs/blueprint-spec
-# Free tier: spins down after ~15 min idle; disk is EPHEMERAL, so the app
-# self-heals on every cold boot (VTUDOCS_EPHEMERAL) by re-seeding its demo
-# library from ./library. Uploads made between restarts do not survive —
-# this is a demo/portfolio deployment, not a production data store.
+# Render blueprint for the app folder — kept in sync with the copy at the repo root,
+# which is the one Render actually reads (see the comment block there).
+# Free tier: spins down after ~15 min idle; disk is EPHEMERAL, so the app re-seeds
+# its library on every cold boot (VTUDOCS_EPHEMERAL) from ./library + ./cover-art.
 services:
   - type: web
     name: vtudocs
@@ -14,10 +13,14 @@ services:
     autoDeploy: true
     envVars:
       - key: VTUDOCS_EPHEMERAL
-        value: "1"        # re-seed automatically when data/ got wiped by a restart
+        value: "1"
       - key: PYTHON_VERSION
         value: "3.12"
-      # Optional: set a fixed value so login sessions survive cold restarts
-      # (otherwise a fresh signing key is generated per boot and users re-login).
+      # Optional Google sign-in — see GOOGLE-SIGNIN.md
+      # - key: GOOGLE_CLIENT_ID
+      #   sync: false
+      # - key: GOOGLE_CLIENT_SECRET
+      #   sync: false
+      # Optional fixed signing key so sessions survive cold restarts
       # - key: VTUDOCS_SECRET
       #   generateValue: true

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Shared storage layer for VTU Docs: paths, schema, auth primitives."""
+"""Shared storage layer for VTU Docs: paths, schema, session primitives."""
 import base64, hashlib, hmac, json, os, re, sqlite3, time
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -16,13 +16,18 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS users(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, pass TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'student',
+  role TEXT NOT NULL DEFAULT 'viewer',
   dept TEXT DEFAULT '', semester TEXT DEFAULT '', avatar TEXT DEFAULT '#6366f1',
   created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS subjects(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE, title TEXT NOT NULL, eyebrow TEXT DEFAULT '',
+  cover TEXT DEFAULT '', order_n INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS courses(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   code TEXT NOT NULL UNIQUE, title TEXT NOT NULL,
-  dept TEXT DEFAULT '', semester TEXT DEFAULT '', created_at INTEGER NOT NULL);
+  dept TEXT DEFAULT '', semester TEXT DEFAULT '', created_at INTEGER NOT NULL,
+  subject_id INTEGER, blurb TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS documents(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   owner_id INTEGER NOT NULL REFERENCES users(id),
@@ -42,6 +47,11 @@ CREATE TABLE IF NOT EXISTS favorites(
   PRIMARY KEY(user_id, doc_id));
 """
 
+# columns added after the first release — applied to existing databases on boot
+ADDED_COLUMNS = {
+    "courses": {"subject_id": "INTEGER", "blurb": "TEXT DEFAULT ''"},
+}
+
 def connect():
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
@@ -49,26 +59,23 @@ def connect():
     return con
 
 def init_db():
-    connect().executescript(SCHEMA)
+    con = connect()
+    con.executescript(SCHEMA)
+    for table, cols in ADDED_COLUMNS.items():
+        have = {r["name"] for r in con.execute(f"PRAGMA table_info({table})")}
+        for col, ddl in cols.items():
+            if col not in have:
+                con.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
+    con.commit()
+    con.close()
 
 def now():
     return int(time.time())
 
-# ---------------------------------------------------------------- passwords
-def hash_password(pw):
-    salt = os.urandom(12).hex()
-    dk = hashlib.pbkdf2_hmac("sha256", pw.encode(), bytes.fromhex(salt), 100_000)
-    return f"pbkdf2_sha256$100000${salt}${dk.hex()}"
-
-def verify_password(pw, stored):
-    try:
-        _alg, iters, salt, hexd = stored.split("$")
-        dk = hashlib.pbkdf2_hmac("sha256", pw.encode(), bytes.fromhex(salt), int(iters))
-        return hmac.compare_digest(dk.hex(), hexd)
-    except Exception:
-        return False
-
-# ---------------------------------------------------------------- tokens
+# ------------------------------------------------- sessions (Google sign-in only)
+# No password is ever hashed or stored: the only account path is Google Sign-In,
+# which verifies identity at Google and hands us an email address. The signed
+# cookie below therefore carries nothing but a user id.
 SECRET_FILE = os.path.join(DATA, "secret.key")
 def _secret():
     env = os.environ.get("VTUDOCS_SECRET")
@@ -98,8 +105,6 @@ def read_token(tok):
         return None
 
 # ---------------------------------------------------------------- files
-ALLOWED_EXT = {"pdf", "pptx", "ppt", "zip", "png", "jpg", "jpeg", "csv", "md", "txt"}
-MAX_UPLOAD = 60 * 1024 * 1024
 MIME = {"pdf": "application/pdf", "pptx": "application/vnd.openxmlformats-officedocument"
         ".presentationml.presentation", "ppt": "application/vnd.ms-powerpoint",
         "zip": "application/zip", "png": "image/png", "jpg": "image/jpeg",
@@ -123,25 +128,23 @@ def safe_title(s):
     return re.sub(r"\s+", " ", str(s)).strip()
 
 def row_doc(con, r, me_id=None):
+    """Public shape of a document row — this is a read-only public library, so
+    there is no per-viewer state (no favourites, no owner identity) in it."""
     if not r:
         return None
     d = dict(r)
-    o = con.execute("SELECT name, role, avatar FROM users WHERE id=?",
-                    (d["owner_id"],)).fetchone()
-    c = con.execute("SELECT code, title, semester, dept FROM courses WHERE id=?",
+    c = con.execute("SELECT code, title, semester, dept, subject_id FROM courses WHERE id=?",
                     (d["course_id"],)).fetchone() if d["course_id"] else None
-    fav = con.execute("SELECT 1 FROM favorites WHERE user_id=? AND doc_id=?",
-                      (me_id, d["id"])).fetchone() if me_id else None
-    thumb = os.path.exists(os.path.join(THUMB_DIR, f"doc{d['id']}.png"))
-    for k in ("owner", "course"):
-        d.pop(k, None)
+    ext = (d["filename"].rsplit(".", 1)[-1].lower() if "." in d["filename"] else "")
     return {"id": d["id"], "title": d["title"], "description": d["description"],
-            "type": d["type"], "filename": d["filename"], "size": d["size"],
+            "type": d["type"], "filename": d["filename"], "ext": ext, "size": d["size"],
             "sha": d["sha"], "tags": [t for t in (d["tags"] or "").split(",") if t],
             "downloads": d["downloads"], "views": d["views"],
             "created_at": d["created_at"], "updated_at": d["updated_at"],
-            "owner": dict(o) if o else None, "course": dict(c) if c else None,
-            "course_id": d["course_id"], "is_fav": bool(fav), "has_thumb": thumb,
-            "mime": d["mime"]}
+            "course": dict(c) if c else None,
+            "course_id": d["course_id"],
+            "subject_id": (c["subject_id"] if c else None),
+            "is_pdf": d["mime"] == "application/pdf",
+            "has_thumb": os.path.exists(os.path.join(THUMB_DIR, f"doc{d['id']}.png"))}
 
 

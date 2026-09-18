@@ -3,36 +3,245 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VTU Docs — course library for VTU students</title>
+<title>VTU Docs — course manuals by Dr. Lokesh M R, ISE · AJIET Mangaluru</title>
+<meta name="description" content="One-page library of VTU 2025-scheme course manuals, lab books and classroom slides written by Dr. Lokesh M R, Professor, Department of Information Science and Engineering, A J Institute of Engineering and Technology, Mangaluru. No sign-up — open a subject and read or download the manual.">
+<meta name="author" content="Dr. Lokesh M R">
+<meta name="theme-color" content="#0e1424">
+<meta property="og:title" content="VTU Docs — course manuals by Dr. Lokesh M R">
+<meta property="og:description" content="Open library of VTU 2025-scheme course manuals, lab books and slide decks. Click a subject cover to read or download the manual.">
+<meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234f46e5'/%3E%3Cpath d='M7 6h7l3 3v9H7z' fill='%23fff' opacity='.92'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute">
+<!-- icon sprite: every glyph the page uses -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 15.5 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v4h4M10 12h5M10 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 0-2 2zM20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
-    <symbol id="i-docs" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v4h4M10 12h5M10 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
-    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.6 2.5 5.1 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
-    <symbol id="i-star-f" viewBox="0 0 24 24"><path d="m12 3.6 2.5 5.1 5.6.8-4 4 .9 5.6-5-2.7-5 2.7.9-5.6-4-4 5.6-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
-    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 20h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12m0 0 4-4m-4 4-4-4M4 20h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-pen" viewBox="0 0 24 24"><path d="m4 20 1-4L16.7 4.3a2 2 0 0 1 2.9 2.8L8 19l-4 1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
-    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 4h4M7 7l1 13h8l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 16v4M8.5 20h7M8 8h8M8 11.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-tool" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12m0 0 4-4m-4 4-4-4M4 20h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-read" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 15.5 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5M15 8l4 4-4 4M19 12H9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
-    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+    <symbol id="i-g" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.06-1.2-.16-1.8H12v3.4h5.4c-.1.9-.7 2.2-2 3.1v2.6h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.6c-.9.6-2 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3.1v2.7C4.7 19.8 8.1 22 12 22z"/><path fill="#FBBC05" d="M6.4 13.9c-.2-.6-.3-1.2-.3-1.9s.1-1.3.3-1.9V7.4H3.1C2.4 8.8 2 10.4 2 12s.4 3.2 1.1 4.6l3.3-2.7z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8C17 3 14.7 2 12 2 8.1 2 4.7 4.2 3.1 7.4l3.3 2.7C7.2 7.6 9.4 5.9 12 5.9z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.2-3 7.6-7 9-4-1.4-7-4.8-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
-<div id="app" aria-live="polite"></div>
+
+<header class="nav" id="top">
+  <a class="brand" href="#top">
+    <span class="logo">V</span>
+    <span class="brand-txt"><b>VTU Docs</b><small>ISE · A J Institute of Engineering &amp; Technology, Mangaluru</small></span>
+  </a>
+  <nav class="menu" id="menu">
+    <a href="#subjects">Subjects</a>
+    <a href="#library">All manuals</a>
+    <a href="#creator">Creator</a>
+    <a href="#about">About</a>
+  </nav>
+  <div class="top-right">
+    <button class="btn ghost sm" id="jump-search"><svg class="ic"><use href="#i-search"/></svg> Search</button>
+    <span id="auth-slot"></span>
+    <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+  <!-- ---------------------------------------------------------- hero -->
+  <section class="hero">
+    <div class="hero-art" aria-hidden="true"></div>
+    <div class="hero-in">
+      <div class="hero-copy">
+        <span class="pill"><svg class="ic" style="width:15px;height:15px"><use href="#i-shield"/></svg>
+          No sign-in · no password · open to every student</span>
+        <h1>Every course manual,<br><em>one click away.</em></h1>
+        <p>Lab books, theory notes and classroom decks for the VTU 2025-scheme batches —
+           written, compiled and captured by <b>Dr. Lokesh M R</b>. Pick a subject cover
+           below to read the manual in the browser or download the PDF.</p>
+        <div class="hero-cta">
+          <a class="btn primary" href="#subjects"><svg class="ic"><use href="#i-grid"/></svg> Choose a subject</a>
+          <a class="btn ghost" href="#library">Browse all manuals</a>
+        </div>
+        <dl class="stats" id="stats">
+          <div><dt>Subjects</dt><dd>…</dd></div>
+          <div><dt>Manuals</dt><dd>…</dd></div>
+          <div><dt>Courses</dt><dd>…</dd></div>
+          <div><dt>Downloads</dt><dd>…</dd></div>
+        </dl>
+      </div>
+
+      <figure class="creator-card" id="creator-teaser">
+        <div class="cc-top">
+          <div class="cc-avatar" aria-hidden="true">LM</div>
+          <div>
+            <b>Dr. Lokesh M R</b>
+            <span>Professor</span>
+          </div>
+        </div>
+        <div class="cc-body">
+          <p class="cc-dept">Department of Information Science and Engineering</p>
+          <p class="cc-inst">A J Institute of Engineering and Technology<br>Mangaluru, Karnataka, India</p>
+          <p class="cc-note">“Every volume here was written, run and captured for the 2025-scheme
+             batches — programs compiled, outputs recorded, nothing typed from memory.”</p>
+          <a class="btn ghost sm" href="#creator">About the creator <svg class="ic" style="width:15px;height:15px"><use href="#i-arrow"/></svg></a>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------- subjects -->
+  <section class="band" id="subjects">
+    <div class="band-in">
+      <div class="band-head">
+        <div>
+          <span class="eyebrow">Step 1 · click a cover</span>
+          <h2>Subject manuals</h2>
+          <p>Each cover opens its own shelf: the course book, the classroom slides and any
+             tool that ships with the subject.</p>
+        </div>
+        <span class="count" id="subjects-count"></span>
+      </div>
+      <div class="tiles" id="subject-tiles">
+        <div class="tile skel"></div><div class="tile skel"></div><div class="tile skel"></div>
+        <div class="tile skel"></div><div class="tile skel"></div><div class="tile skel"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------- all manuals -->
+  <section class="band alt" id="library">
+    <div class="band-in">
+      <div class="band-head">
+        <div>
+          <span class="eyebrow">Step 2 · or search everything</span>
+          <h2>The whole shelf</h2>
+          <p>Filter by subject or file type, sort by downloads or recency, then read a PDF
+             inline or take it offline.</p>
+        </div>
+        <span class="count" id="library-count"></span>
+      </div>
+      <div class="controls">
+        <div class="search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input id="q" type="search" placeholder="Search manuals — title, tag, course code…" autocomplete="off">
+        </div>
+        <select id="f-subject" class="sel"><option value="">All subjects</option></select>
+        <select id="f-type" class="sel">
+          <option value="">All types</option>
+          <option value="book">Course books</option>
+          <option value="slides">Classroom slides</option>
+          <option value="notes">Notes &amp; sheets</option>
+          <option value="archive">Tools &amp; archives</option>
+        </select>
+        <select id="f-sort" class="sel">
+          <option value="downloads">Most downloaded</option>
+          <option value="recent">Newest first</option>
+          <option value="views">Most read</option>
+          <option value="title">Title A–Z</option>
+        </select>
+      </div>
+      <div class="rows" id="manual-rows"></div>
+      <div class="load-more" id="load-more"></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------ creator -->
+  <section class="band" id="creator">
+    <div class="band-in creator-grid">
+      <div>
+        <span class="eyebrow">The author</span>
+        <h2>Dr. Lokesh M R</h2>
+        <p class="lead">Professor, Department of Information Science and Engineering,
+           A J Institute of Engineering and Technology, Mangaluru, Karnataka.</p>
+        <p>The VTU Docs series started as one lab record book and grew into a full set of
+           course volumes for the 2025 scheme: C and Python labs, Java OOP, digital design,
+           operating systems, probability &amp; statistics, exploratory data analysis, and the
+           community-project handbook that documents its own offline learning tool.</p>
+        <p>Every volume follows one rule — <b>a number is only written after a capture</b>.
+           Programs are compiled and run, transcripts are embedded verbatim, thumbnails come
+           from the finished PDF, and the slides cite the same pages the book prints.</p>
+        <ul class="ticks">
+          <li><svg class="ic"><use href="#i-check"/></svg> 8 course volumes + the guides and tools that support them</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Free to read, free to download, free to print — no account, ever</li>
+          <li><svg class="ic"><use href="#i-check"/></svg> Written for VTU 2025-scheme CSE / ISE / ECE batches</li>
+        </ul>
+        <div class="hero-cta">
+          <a class="btn primary" href="mailto:lokesh@ajiet.edu.in"><svg class="ic"><use href="#i-mail"/></svg> Write to the department</a>
+          <a class="btn ghost" href="#subjects">Open the manuals</a>
+        </div>
+      </div>
+      <figure class="plate">
+        <img src="/assets/covers/GEN-RES.jpg" alt="Departmental resource cover plate" loading="lazy">
+        <figcaption>Cover plates for this library were composed for the site —
+          one per subject, all crediting the author.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------- about -->
+  <section class="band alt" id="about">
+    <div class="band-in">
+      <span class="eyebrow">About this page</span>
+      <h2>How to use it</h2>
+      <div class="about-grid">
+        <div class="about-card">
+          <span class="num">1</span>
+          <b>Pick the subject</b>
+          <p>Click a cover plate. The shelf for that subject opens with its book, slides
+             and tools listed.</p>
+        </div>
+        <div class="about-card">
+          <span class="num">2</span>
+          <b>Read it in the browser</b>
+          <p>PDF manuals open in an inline reader — no download, no app, works on a phone.</p>
+        </div>
+        <div class="about-card">
+          <span class="num">3</span>
+          <b>Or take it offline</b>
+          <p>Download the PDF or the slide deck and keep it for the lab, the exam week or
+             a slow connection.</p>
+        </div>
+        <div class="about-card">
+          <span class="num">4</span>
+          <b>No account needed</b>
+          <p>Nothing here is behind a login. Google sign-in is optional and only remembers
+             your name on this device.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <div>
+      <b>VTU Docs</b>
+      <p>Course manuals and lab material for the VTU 2025 scheme.</p>
+    </div>
+    <div>
+      <b>Creator</b>
+      <p>Dr. Lokesh M R<br>Professor, Department of Information Science and Engineering<br>
+         A J Institute of Engineering and Technology, Mangaluru, Karnataka</p>
+    </div>
+    <div>
+      <b>Reach</b>
+      <p><a href="mailto:lokesh@ajiet.edu.in">lokesh@ajiet.edu.in</a></p>
+    </div>
+  </div>
+  <div class="foot-bar">
+    <span>© <span id="year">2026</span> Dr. Lokesh M R · Department of ISE, AJIET Mangaluru</span>
+    <span class="foot-links"><a href="#top">Back to top</a><a href="#about">About</a></span>
+  </div>
+</footer>
+
 <div id="modal-root"></div>
-<div id="toast-root" role="status"></div>
+<div id="toast-root" role="status" aria-live="polite"></div>
 <script src="/assets/app.js"></script>
 </body>
 </html>
